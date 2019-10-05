@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="http://dimplejs.org/dist/dimple.v2.0.0.min.js"></script>
+    
+    <style>
+      circle.dimple-series-1 {
+        fill: blue;
+      }
+
+      h2 {
+        text-align: center;
+      }
+    </style>
+
+    <script type="text/javascript">
+      function draw(data) {
+      
+      /*
+        D3.js setup code
+      */
+
+          "use strict";
+          var margin = 75,
+              width = 1400 - margin,
+              height = 600 - margin;
+
+          var svg = d3.select("body")
+            .append("svg")
+              .attr("width", width + margin)
+              .attr("height", height + margin)
+            .append('g')
+                .attr('class','chart');
+
+          //Add Plot Title
+          svg.append("text")
+            .attr("x", 20)
+            .attr("y", 20)
+            .style("text-anchor", "left")
+            .style("font-family", "sans-serif")
+            .style("font-weight", "bold")
+            .text("Comparing per capita CO2 emissions with HDI globally")
+
+      /*
+        Dimple.js Chart construction code
+      */
+
+          // Setting up the SVG canvas and container for the chart
+          var myChart = new dimple.chart(svg, data);
+          myChart.setBounds(60, 50, 500, 330)
+
+          //debugger;
+
+          // Adding the axes
+          var xAxis = myChart.addMeasureAxis("x", "co2_pp"); 
+          var yAxis = myChart.addMeasureAxis("y", "hdi");
+          var zAxis = myChart.addMeasureAxis("z", "co2_pp_area");
+          
+          // Tick spacing on the axes
+          xAxis.tickFormat = ".f";
+          yAxis.tickFormat = ".1f";
+
+          // Titles
+          myChart.addLegend(170, 300, 410, 60)
+          xAxis.title = "CO2 Emissions (tonnes per person)"
+          yAxis.title = "Human Development Index (HDI from 0 to 1)"
+
+          // Putting the data in!
+          // This way groups by region and shows country data
+          myChart.addSeries(["country", "region"], dimple.plot.bubble);
+
+          //debugger;
+
+          /*  The following code is modified from the dimple.js documentation
+              http://dimplejs.org/advanced_examples_viewer.html?id=advanced_storyboard_control
+          */
+
+          // Create the indicator chart on the right of the main chart
+          var indicator = new dimple.chart(svg, data);
+
+          // Pick blue as the default and orange for the selected month
+          var defaultColor = indicator.defaultColors[0];
+          var indicatorColor = indicator.defaultColors[2];
+
+          // The frame duration for the animation in milliseconds
+          var frame = 2000;
+
+          var firstTick = true;
+
+          // Place the indicator bar chart to the right
+          indicator.setBounds(560, 50, 153, 311);
+
+          // Add dates along the y axis
+          var y = indicator.addCategoryAxis("y", "year");
+          y.addOrderRule("year", "Desc");
+
+          // Use co2_pp for bar size and hide the axis
+          var x = indicator.addMeasureAxis("x", "co2_pp");
+          x.tickFormat = ".2f";
+          x.hidden = true;
+
+          // Add the bars to the indicator and add event handlers
+          var s = indicator.addSeries(null, dimple.plot.bar);
+          s.aggregate = dimple.aggregateMethod.avg; // added to produce average rather than sum
+          s.addEventHandler("click", onClick);
+          // Draw the side chart
+          indicator.draw();
+
+          // Remove the title from the y axis
+          y.titleShape.remove();
+
+          // Remove the lines from the y axis
+          y.shapes.selectAll("line,path").remove();
+
+          // Move the y axis text inside the plot area
+          y.shapes.selectAll("text")
+                  .style("text-anchor", "start")
+                  .style("font-size", "11px")
+                  .attr("transform", "translate(18, 0.5)");
+
+          // On click of the side chart
+          function onClick(e) {
+              // Pause the animation
+              story.pauseAnimation();
+              // If it is already selected resume the animation
+              // otherwise pause and move to the selected month
+              if (e.yValue === story.getFrameValue()) {
+                  story.startAnimation();
+              } else {
+                  story.goToFrame(e.yValue);
+                  story.pauseAnimation();
+              }
+          }
+
+          // On tick of the main charts storyboard
+          function onTick(e) {
+              if (!firstTick) {
+                  // Color all shapes the same
+                  s.shapes
+                          .transition()
+                          .duration(frame / 2)
+                          .style("fill", function (d) { return (d.y === e ? indicatorColor.fill : defaultColor.fill) })
+                          .style("stroke", function (d) { return (d.y === e ? indicatorColor.stroke : defaultColor.stroke) });
+              }
+              firstTick = false;
+          }
+
+          /* End of code from documentation
+          */
+
+          debugger;
+
+          //Setting up an animation story board
+          var story = myChart.setStoryboard("year", onTick);
+
+          // Fixing the axes so they don't move during animation
+          xAxis.overrideMax = 70.;
+          yAxis.overrideMax = 1.;
+
+          // Drawing the main chart
+          myChart.draw();
+        };
+
+    </script>
+  </head>
+<body>
+  <script type="text/javascript">
+  /*
+    Use D3 (not dimple.js) to load the CSV file
+    and pass the contents of it to the draw function
+    Some extra lines added for converting strings to floats via unary operator
+    */
+  d3.csv("co2_hdi_long.csv", function(d){
+    d['co2_pp'] = +d['co2_pp'];
+    d['hdi'] = +d['hdi'];
+    d['co2_pp_area'] = +d['co2_pp_area'];
+    return d;
+  }, draw);
+  </script>
+</body>
+</html>
