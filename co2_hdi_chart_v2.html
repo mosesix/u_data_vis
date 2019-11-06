@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="http://dimplejs.org/dist/dimple.v2.0.0.min.js"></script>
+    
+    <style>
+      circle.dimple-series-1 {
+        fill: blue;
+      }
+
+      h2 {
+        text-align: center;
+      }
+    </style>
+
+    <script type="text/javascript">
+      function draw(data) {
+      
+      /*
+        D3.js setup code
+      */
+
+          "use strict";
+          var margin = 75,
+              width = 1400 - margin,
+              height = 600 - margin;
+
+          var svg = d3.select("body")
+            .append("svg")
+              .attr("width", width + margin)
+              .attr("height", height + margin)
+            .append('g')
+                .attr('class','chart');
+
+          //Add Plot Title
+          svg.append("text")
+            .attr("x", 20)
+            .attr("y", 20)
+            .style("text-anchor", "left")
+            .style("font-family", "sans-serif")
+            .style("font-weight", "bold")
+            .style("font-size", "24px")
+            .text("National CO2 Emissions and Development from 1990 to 2014")
+
+          //Add explanation below title
+          // Found a nice way of doing multi-line text description using an array here:
+          // http://bl.ocks.org/tybyers/736da90eefe0c347a1d6
+          svg.selectAll("explanatory-text")
+            .data([
+              "The chart below shows the relationship between the per capita CO2 emissions and the Human Development Index (HDI) for 187 countries",
+              "with data available in Gapminder.org."])
+            .enter()
+            .append("text")
+              .attr("x", 20)
+              .attr("y", function (d,i) {return 40 + i *14; }) // This is the clever bit!
+              .style("text-anchor", "left")
+              .style("font-family", "sans-serif")
+              .style("font-size", "12px")
+              .text(function (d) {return d;});
+
+          //Add more detailed explanation below chart
+          svg.selectAll("explanatory-text")
+            .data([
+              "- The chart is animated such that it cycles through each year from 1990 to 2014 on a loop. The animation can be paused by clicking on any",
+              "of the years shown on the right hand side of the chart which also jumps to that year. It can be unpaused by clicking on the highlighted year.",
+              "- The different colours represent different geographical regions. The chart can be filtered by region by clicking on the region in the legend.",
+              "- The animation shows the gradual increase of HDI over time. It also shows the decrease in CO2 emissions in recent years - which is also",
+              "shown by the length of the year bars on the right hand side. The data for 1990 is always visible on the chart as \"ghost bubbles\" for comparison.",
+              "- The main conclusion is that there is an optimum point of high HDI and relatively low CO2 emissions - and it's moving up and left over time."])
+            .enter()
+            .append("text")
+              .attr("x", 20)
+              .attr("y", function (d,i) {return 525 + i *14; })
+              .style("text-anchor", "left")
+              .style("font-family", "sans-serif")
+              .style("font-size", "12px")
+              .text(function (d) {return d;});      
+
+      /*
+        Dimple.js Chart construction code
+      */
+
+          // Setting up the SVG canvas and container for the chart
+          var myChart = new dimple.chart(svg, data);
+          myChart.setBounds(60, 75, 500, 330)
+
+          //debugger;
+
+          // Adding the axes
+          var xAxis = myChart.addMeasureAxis("x", "CO2 per person"); 
+          var yAxis = myChart.addMeasureAxis("y", "HDI");
+          var zAxis = myChart.addMeasureAxis("z", "Bubble Size");
+          
+          // Tick spacing on the axes
+          xAxis.tickFormat = ".f";
+          yAxis.tickFormat = ".1f";
+
+          // Titles
+          var myLegend = myChart.addLegend(170, 450, 410, 60)
+          xAxis.title = "CO2 Emissions (tonnes per person)"
+          yAxis.title = "Human Development Index (HDI from 0 to 1)"
+
+          // Putting the data in!
+          // This way groups by region and shows country data
+          myChart.addSeries(["country", "region"], dimple.plot.bubble);
+
+          //debugger;
+
+          /*  The following code is based heavily on the dimple.js documentation
+              http://dimplejs.org/advanced_examples_viewer.html?id=advanced_storyboard_control
+              But with lots of edits (big and small) to make it work here!
+          */
+
+          // Create the indicator chart on the right of the main chart
+          var indicator = new dimple.chart(svg, data);
+
+          // Pick blue as the default and orange for the selected month
+          var defaultColor = indicator.defaultColors[0];
+          var indicatorColor = indicator.defaultColors[2];
+
+          // The frame duration for the animation in milliseconds
+          var frame = 2000;
+
+          var firstTick = true;
+
+          // Place the indicator bar chart to the right
+          indicator.setBounds(585, 75, 150, 330);
+
+          // Add dates along the y axis
+          var y = indicator.addCategoryAxis("y", "year");
+          y.addOrderRule("year", "Desc");
+
+          // Use co2_pp for bar size and hide the axis
+          var x = indicator.addMeasureAxis("x", "CO2 per person");
+          x.tickFormat = ".2f";
+          //x.hidden = true;
+          x.ticks = 5;
+          x.title = "Average CO2 Emissions for all countries"
+
+
+          // Add the bars to the indicator and add event handlers
+          var s = indicator.addSeries(null, dimple.plot.bar);
+          s.aggregate = dimple.aggregateMethod.avg; // added to produce average rather than sum
+          s.addEventHandler("click", onClick);
+          // Draw the side chart
+          indicator.draw();
+
+          // Make the bars less opaque (to see the years more clearly)
+          s.shapes.style("opacity",0.4)
+
+          // Remove the title from the y axis
+          y.titleShape.remove();
+
+          // Remove the lines from the y axis
+          y.shapes.selectAll("line,path").remove();
+
+          // Move the y axis text inside the plot area
+          y.shapes.selectAll("text")
+                  .style("text-anchor", "start")
+                  .style("font-size", "11px")
+                  .attr("transform", "translate(42, 0.5)");
+                  // this translate places the years nicely between the 2nd & 3rd ticks
+
+          // On click of the side chart
+          function onClick(e) {
+              // Pause the animation
+              story.pauseAnimation();
+              // If it is already selected resume the animation
+              // otherwise pause and move to the selected month
+              if (e.yValue === story.getFrameValue()) {
+                  story.startAnimation();
+              } else {
+                  story.goToFrame(e.yValue);
+                  story.pauseAnimation();
+              }
+          }
+
+          // On tick of the main charts storyboard
+          function onTick(e) {
+              if (!firstTick) {
+                  // Color all shapes the same
+                  s.shapes
+                          .transition()
+                          .duration(frame / 2)
+                          .style("fill", function (d) { return (d.y === e ? indicatorColor.fill : defaultColor.fill) })
+                          .style("stroke", function (d) { return (d.y === e ? indicatorColor.stroke : defaultColor.stroke) });
+              }
+              firstTick = false;
+          }
+
+          /* End of code from documentation
+          */
+
+          debugger;
+
+          //Setting up an animation story board
+          var story = myChart.setStoryboard("year", onTick);
+
+          // Fixing the axes so they don't move during animation
+          xAxis.overrideMax = 70.;
+          yAxis.overrideMax = 1.;
+          zAxis.overrideMax = 10;
+
+         /*
+         Code for adding ghost points for 1990
+         Copied from main code above (comments removed)
+         */
+          // Create a new array for the first year only
+          // by using the values of the first element of a nested D3 collection
+          var nestedByYear = d3.nest()
+                                .key(function(d) {
+                                  return d['year'];
+                                })
+                                .entries(data)
+          var data_1990 = nestedByYear[0].values;
+
+          var ghostChart = new dimple.chart(svg,data_1990);
+          ghostChart.setBounds(60, 75, 500, 330)
+
+          //debugger;
+
+          var ghostxAxis = ghostChart.addMeasureAxis("x", "CO2 per person"); 
+          var ghostyAxis = ghostChart.addMeasureAxis("y", "HDI");
+          var ghostzAxis = ghostChart.addMeasureAxis("z", "Bubble Size");
+
+          ghostxAxis.overrideMax = 70.;
+          ghostyAxis.overrideMax = 1.;
+          ghostzAxis.overrideMax = 10;
+
+          var ghostSeries = ghostChart.addSeries(["country", "region"], dimple.plot.bubble);
+
+          debugger;
+          
+          ghostChart.draw();
+          ghostxAxis.hidden = true;
+          ghostyAxis.hidden = true;
+          ghostxAxis.titleShape.remove();
+          ghostyAxis.titleShape.remove();
+          ghostxAxis.gridlineShapes.remove();
+          ghostyAxis.gridlineShapes.remove();
+
+          // Make the ghost bubbles less opaque
+          ghostSeries.shapes.style("opacity",0.1)
+          
+          // Drawing the main chart
+          myChart.draw();
+
+          // Stop the legend from disappearing during the animation
+          myChart.legends = [];
+
+          /*  The following code is based heavily on the dimple.js documentation
+              http://dimplejs.org/advanced_examples_viewer.html?id=advanced_interactive_legends
+              But with some minor edits to make it work here.
+          */
+
+          // Get a unique list of region values to use when filtering
+          var filterValues = dimple.getUniqueValues(data, "region");
+          // Get all the rectangles from our now orphaned legend
+          myLegend.shapes.selectAll("rect")
+            // Add a click event to each rectangle
+            .on("click", function (e) {
+              // This indicates whether the item is already visible or not
+              var hide = false;
+              var newFilters = [];
+              // If the filters contain the clicked shape hide it
+              filterValues.forEach(function (f) {
+                if (f === e.aggField.slice(-1)[0]) {
+                  hide = true;
+                } else {
+                  newFilters.push(f);
+                }
+              });
+              // Hide the shape or show it
+              if (hide) {
+                d3.select(this).style("opacity", 0.2);
+              } else {
+                newFilters.push(e.aggField.slice(-1)[0]);
+                d3.select(this).style("opacity", 0.8);
+              }
+              // Update the filters
+              filterValues = newFilters;
+              // Filter the data
+              myChart.data = dimple.filterData(data, "region", filterValues);
+              // Passing a duration parameter makes the chart animate. Without
+              // it there is no transition
+              myChart.draw(800);
+            });
+          /* End of code from documentation
+          */
+        };
+
+    </script>
+  </head>
+<body>
+  <script type="text/javascript">
+  /*
+    Use D3 (not dimple.js) to load the CSV file
+    and pass the contents of it to the draw function
+    Some extra lines added for converting strings to floats via unary operator
+    */
+  
+  //fileURL = "https://drive.google.com/file/d/1m-gBswMkw-D6eg35l1tqT8ymwAkig_gS/download"
+  //fileURL = "https://www.dropbox.com/s/f8x0mty4r21bwxk/co2_hdi_long.csv"
+  fileURL = "co2_hdi_long.csv"
+
+  d3.csv(fileURL, function(d){
+    d['CO2 per person'] = +d['co2_pp'];
+    d['HDI'] = +d['hdi'];
+    d['Bubble Size'] = +d['co2_pp_area'];
+    return d;
+  }, draw);
+  </script>
+</body>
+</html>
