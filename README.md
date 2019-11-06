@@ -10,22 +10,23 @@ A bubble chart was selected with CO2 emissions on the x-axis and HDI on the y-ax
 Following the feedback (see below) the bubble chart was modified to include the following features:
 * Explanatory text explaining what the chart shows (below the title), how to interact with it (below the legend) and what conclusions were drawn (at the end).
 * Bubble size decreased to make it easier to see individual countries.
-* Persistent bubbles with low opacity added for 1990 data - "ghost" bubbles for reference during the the animation
+* Persistent bubbles with low opacity added for 1990 data - i.e. "ghost" bubbles for reference during the the animation
 * Legend moved below the chart.
+* Ability to filter by region by de-/selecting items from the legend.
 * Opacity of the bars on the side chart decreased so that the years could be more easily seen.
 * X-axis with label and tick marks added to the side chart to make it easier to understand what the length of the bars means
 
 ## FEEDBACK
-Feedback was collected from colleagues and friends working in multiple different fields via a [Google Form](
-https://docs.google.com/forms/d/1_g-Ikr2lqmJjPfR7hKHCshNXgxNZ_h-cHlfcKX0IJwY/)
+Feedback was collected from colleagues and friends working in multiple different fields via a [Google Form](https://docs.google.com/forms/d/1_g-Ikr2lqmJjPfR7hKHCshNXgxNZ_h-cHlfcKX0IJwY/)
 The key pieces of feedback are noted below:
 * Clearer explanation of what the chart is showing and how to navigate.
-* Ability to compare to previous years.
 * Make it easier to see (and hover over) individual bubbles.
+* Ability to compare to previous years.
 * Ability to filter the bubbles (by region).
+* Make the bars & text to the right easier to see and interact with.
 
 ## RESOURCES
-The dataset used for the visualisation is from http://Gapminder.org. It was wrangled in Python using Pandas as part of the Udacity Investigate a Dataset project. Additional code was added to further treat the data for this project, including melting the pandas dataframes from wide to long format, and to export as two CSV files. These were combined and modified in Excel, including adding a lookup for the regions corresponding to each country based on UK HMRC data available here https://www.uktradeinfo.com/CodesAndGuides/Documents/Country_region.xls.
+The dataset used for the visualisation is from [Gapminder](http://Gapminder.org). It was wrangled in Python using Pandas as part of the Udacity Investigate a Dataset project. Additional code was added to further treat the data for this project, including melting the pandas dataframes from wide to long format, and to export as two CSV files. These were combined and modified in Excel, including adding a lookup for the regions corresponding to each country based on UK HMRC data available [here](https://www.uktradeinfo.com/CodesAndGuides/Documents/Country_region.xls).
 
-The Dimple.js documentation [dimplejs.org] was consulted extensively with whole sections of code from the documentation used in the index.html file, especially for the storyboard control [http://dimplejs.org/advanced_examples_viewer.html?id=advanced_storyboard_control]. Any reused code is indicated in the index.html file.
+The Dimple.js [documentation](http://dimplejs.org) was consulted extensively with whole sections of code from the documentation used in the index.html file, especially for the [storyboard control](http://dimplejs.org/advanced_examples_viewer.html?id=advanced_storyboard_control). Any reused code is indicated in the index.html file.
 
